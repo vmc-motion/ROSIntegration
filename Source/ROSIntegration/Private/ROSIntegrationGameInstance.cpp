@@ -39,6 +39,26 @@ void UROSIntegrationGameInstance::Init()
 {
 	Super::Init();
 
+	// Find AROSBridgeParamOverride actor, if it exists, to override ROS connection parameters
+	TArray<AActor*> TempArray;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AROSBridgeParamOverride::StaticClass(), TempArray);
+	if (TempArray.Num() > 0)
+	{
+		AROSBridgeParamOverride* OverrideParams = Cast<AROSBridgeParamOverride>(TempArray[0]);
+		if (OverrideParams)
+		{
+			UE_LOG(LogROS, Display, TEXT("ROSIntegrationGameInstance::Init() - Found AROSBridgeParamOverride to override ROS connection parameters."));
+			ROSBridgeServerHost = OverrideParams->ROSBridgeServerHost;
+			ROSBridgeServerPort = OverrideParams->ROSBridgeServerPort;
+			bConnectToROS = OverrideParams->bConnectToROS;
+			bSimulateTime = OverrideParams->bSimulateTime;
+			bUseFixedUpdateInterval = OverrideParams->bUseFixedUpdateInterval;
+			FixedUpdateInterval = OverrideParams->FixedUpdateInterval;
+			bCheckHealth = OverrideParams->bCheckHealth;
+			CheckHealthInterval = OverrideParams->CheckHealthInterval;
+		}
+	}
+
 	if (bConnectToROS)
 	{
 		bool resLock = initMutex_.TryLock(); 
@@ -59,26 +79,6 @@ void UROSIntegrationGameInstance::Init()
 			UROSIntegrationCore* oldRosCore = ROSIntegrationCore;
 			ROSIntegrationCore = nullptr;
 			oldRosCore->ConditionalBeginDestroy();
-		}
-
-		// Find AROSBridgeParamOverride actor, if it exists, to override ROS connection parameters
-		TArray<AActor*> TempArray;
-		UGameplayStatics::GetAllActorsOfClass(GetWorld(), AROSBridgeParamOverride::StaticClass(), TempArray);
-		if (TempArray.Num() > 0)
-		{
-			AROSBridgeParamOverride* OverrideParams = Cast<AROSBridgeParamOverride>(TempArray[0]);
-			if (OverrideParams)
-			{
-				UE_LOG(LogROS, Display, TEXT("ROSIntegrationGameInstance::Init() - Found AROSBridgeParamOverride to override ROS connection parameters."));
-				ROSBridgeServerHost = OverrideParams->ROSBridgeServerHost;
-				ROSBridgeServerPort = OverrideParams->ROSBridgeServerPort;
-				bConnectToROS = OverrideParams->bConnectToROS;
-				bSimulateTime = OverrideParams->bSimulateTime;
-				bUseFixedUpdateInterval = OverrideParams->bUseFixedUpdateInterval;
-				FixedUpdateInterval = OverrideParams->FixedUpdateInterval;
-				bCheckHealth = OverrideParams->bCheckHealth;
-				CheckHealthInterval = OverrideParams->CheckHealthInterval;
-			}
 		}
 
 		ROSIntegrationCore = NewObject<UROSIntegrationCore>(UROSIntegrationCore::StaticClass()); // ORIGINAL 
